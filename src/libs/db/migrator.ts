@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Kysely } from "kysely";
 import { FileMigrationProvider, type MigrationResultSet, Migrator } from "kysely/migration";
 import type { Database } from "./database.js";
@@ -13,7 +13,15 @@ const migrationFolder = fileURLToPath(new URL("../../../database/migrations", im
  * are, which Node supports for files that only use erasable syntax.
  */
 export function createMigrator(db: Kysely<Database>): Migrator {
-  return new Migrator({ db, provider: new FileMigrationProvider({ fs, path, migrationFolder }) });
+  return new Migrator({
+    db,
+    provider: new FileMigrationProvider({
+      fs,
+      path,
+      migrationFolder,
+      import: (filePath) => import(pathToFileURL(filePath).href)
+    })
+  });
 }
 
 /** Throws the error a migration run stopped at. Kysely returns it instead of throwing. */
